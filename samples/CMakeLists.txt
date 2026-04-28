@@ -1,4 +1,20 @@
-file(GLOB hdrs "*.h*" "../include/*.h")
-file(GLOB srcs "*.cpp" "../src/*.cpp")
+function(add_sample sample_name source_file)
+    add_executable(${sample_name} ${source_file})
+    
+    target_link_libraries(${sample_name}
+        PRIVATE
+            containers
+    )
+    
+    target_compile_features(${sample_name} PRIVATE cxx_std_20)
+    
+    set_target_properties(${sample_name} PROPERTIES
+        FOLDER "samples/${source_dir}"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/samples/${source_dir}"
+    )
+endfunction()
 
-add_executable(dijkstra ${srcs} ${hdrs})
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sample_dijkstra.cpp)
+    add_sample(sample_dijkstra sample_dijkstra.cpp)
+endif()
+
