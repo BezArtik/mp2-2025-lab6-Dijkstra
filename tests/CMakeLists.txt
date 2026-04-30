@@ -15,11 +15,16 @@ add_executable(tests)
 
 target_sources(tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_heaps/test_binomial_heap.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_heaps/test_dheap.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_containers/test_vector.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_containers/test_priority_queue.cpp
 )
 
 target_link_libraries(tests
 	PRIVATE
     containers
+    heaps
 	GTest::gtest_main
 	GTest::gmock
 )
