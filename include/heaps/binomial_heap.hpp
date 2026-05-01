@@ -13,11 +13,8 @@ public:
 	using reference = T&;
 	using const_reference = const T&;
 
-	BinomialHeap() noexcept
-		: root_(nullptr)
-		, min_(nullptr)
-		, size_(0) {
-	}
+	BinomialHeap() = default;
+
 	BinomialHeap(const BinomialHeap& other)
 		: root_(nullptr)
 		, min_(nullptr)
@@ -117,11 +114,11 @@ public:
 
 private:
 	struct Node {
-		value_type value_;
-		Node* parent_;
-		Node* child_;
-		Node* sibling_;
-		int32_t degree_;
+		value_type value_{};
+		Node* parent_{ nullptr };
+		Node* child_{ nullptr };
+		Node* sibling_{ nullptr };
+		int32_t degree_{};
 		template <typename V>
 		Node(V&& val)
 			: value_(std::forward<V>(val))
@@ -132,10 +129,10 @@ private:
 		}
 	};
 
-	Node* root_;
-	Node* min_;
-	Compare comp_;
-	size_type size_;
+	Node* root_{ nullptr };
+	Node* min_{ nullptr };
+	Compare comp_{};
+	size_type size_{};
 
 	template <typename V>
 	Node* create_node(V&& val) {

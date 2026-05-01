@@ -39,8 +39,8 @@ public:
 	size_type size() const noexcept { return data_.size(); }
 
 private:
-	containers::Vector<value_type> data_;
-	Compare comp_;
+	containers::Vector<value_type> data_{};
+	Compare comp_{};
 
 	size_type parent(size_type index) const noexcept { return (index - 1) / d; }
 	size_type child(size_type index, size_type k) const noexcept { return d * index + k + 1; }

@@ -31,11 +31,6 @@ public:
         using reference = T&;
 
         Iterator() = default;
-        Iterator(const Iterator&) = default;
-        Iterator& operator=(const Iterator&) = default;
-        Iterator(Iterator&&) = default;
-        Iterator& operator=(Iterator&&) = default;
-        ~Iterator() = default;
         Iterator(pointer ptr = nullptr) : ptr_(ptr) {}
 
         reference operator*() const { return *ptr_; }
@@ -55,7 +50,7 @@ public:
         auto operator<=>(const Iterator& other) const noexcept = default;
 
     private:
-        pointer ptr_;
+        pointer ptr_{ nullptr };
         friend class Vector;
     };
 
@@ -68,12 +63,6 @@ public:
         using reference = const T&;
 
         ConstIterator() = default;
-        ConstIterator(const ConstIterator&) = default;
-        ConstIterator& operator=(const ConstIterator&) = default;
-        ConstIterator(ConstIterator&&) = default;
-        ConstIterator& operator=(ConstIterator&&) = default;
-        ~ConstIterator() = default;
-        ConstIterator(const Iterator& it) : ptr_(&(*it)) {}
         ConstIterator(const_pointer ptr = nullptr) : ptr_(ptr) {}
 
         const_reference operator*() const { return *ptr_; }
@@ -93,7 +82,7 @@ public:
 		auto operator<=>(const ConstIterator& other) const noexcept = default;
 
     private:
-        const_pointer ptr_;
+        const_pointer ptr_{ nullptr };
         friend class Vector;
     };
 
@@ -311,9 +300,9 @@ public:
 private:
 
     struct Buffer {
-        pointer begin_ = nullptr;
-        pointer end_ = nullptr;
-        pointer capacity_ = nullptr;
+        pointer begin_{ nullptr };
+        pointer end_{ nullptr };
+        pointer capacity_{ nullptr };
 
         Buffer() = default;
 
@@ -349,7 +338,7 @@ private:
             swap(end_, rhs.end_);
             swap(capacity_, rhs.capacity_);
         }
-    } buf_;
+    } buf_{};
 
     pointer allocate(size_type n) {
         return n != 0 ? static_cast<pointer>(::operator new(n * sizeof(value_type))) : nullptr;

@@ -4,6 +4,8 @@ function(add_sample sample_name source_file)
     target_link_libraries(${sample_name}
         PRIVATE
             containers
+            heaps
+            graph
     )
     
     target_compile_features(${sample_name} PRIVATE cxx_std_20)

@@ -1,25 +1,32 @@
-#include "heaps/binomial_heap.hpp"
-#include "heaps/d_heap.hpp"
+#include "containers/vector.hpp"
+#include "graph/graph.hpp"
+#include "graph/graph_generator.hpp"
+#include "graph/dijkstra.hpp"
 #include <iostream>
 #include <exception>
+#include <chrono>
+
+template <typename HeapType>
+void benchmark_dijkstra(const graph::Graph& graph) {
+    const auto start = std::chrono::steady_clock::now();
+    const auto dist = dijkstra<HeapType>(graph, 0);
+    const auto finish = std::chrono::steady_clock::now();
+    const std::chrono::duration<double> elapsed_seconds{ finish - start };
+    std::cout << elapsed_seconds << std::endl;
+}
 
 int main() {
-	try {
-		heaps::DHeap<int, 3> d_heap; 
-		d_heap.push(10);
-		d_heap.push(5);
-		d_heap.push(20);
-		d_heap.push(15);
-		std::cout << "Top element: " << d_heap.top() << std::endl; 
-		d_heap.pop();
-		std::cout << "Top element after pop: " << d_heap.top() << std::endl; 
-		heaps::BinomialHeap<int> binomial_heap;
-		binomial_heap.push(30);
-		binomial_heap.push(25);
-		binomial_heap.push(40);
-		std::cout << "Top element of binomial heap: " << binomial_heap.top() << std::endl; 
-	} catch (const std::exception& e) {
-		std::cerr << "Exception: " << e.what() << std::endl;
-	}
+    try {
+        std::cout << "Generate graph..." << std::endl;
+        auto graph = graph::GraphGenerator::generate(5000, 1.0, 100, 1000);
+        std::cout << "Complete." << std::endl;
+        std::cout << "Dijkstra PQDHeap: ";
+        benchmark_dijkstra<graph::PQDHeap>(graph);
+        std::cout << "Dijkstra PQBinomialHeap: ";
+        benchmark_dijkstra<graph::PQBinomialHeap>(graph);
+
+    } catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+    }
     return 0;
 }
