@@ -33,8 +33,8 @@ public:
         Iterator() = default;
         Iterator(pointer ptr = nullptr) : ptr_(ptr) {}
 
-        reference operator*() const { return *ptr_; }
-        pointer operator->() const { return ptr_; }
+        reference operator*() const noexcept { return *ptr_; }
+        pointer operator->() const noexcept { return ptr_; }
         reference operator[](difference_type n) const noexcept { return ptr_[n]; }
         Iterator& operator++() noexcept { ++ptr_; return *this; }
         Iterator operator++(int) noexcept { Iterator temp = *this; ++ptr_; return temp; }
@@ -65,8 +65,8 @@ public:
         ConstIterator() = default;
         ConstIterator(const_pointer ptr = nullptr) : ptr_(ptr) {}
 
-        const_reference operator*() const { return *ptr_; }
-        const_pointer operator->() const { return ptr_; }
+        const_reference operator*() const noexcept { return *ptr_; }
+        const_pointer operator->() const noexcept { return ptr_; }
         const_reference operator[](difference_type n) const noexcept { return ptr_[n]; }
         ConstIterator& operator++() noexcept { ++ptr_; return *this; }
         ConstIterator operator++(int) noexcept { ConstIterator temp = *this; ++ptr_; return temp; }
@@ -89,9 +89,7 @@ public:
     using iterator = Iterator;
     using const_iterator = ConstIterator;
 
-    Vector() noexcept {
-        buf_.begin_ = buf_.end_ = buf_.capacity_ = nullptr;
-    }
+    Vector() noexcept = default;
 
     Vector(size_type n) {
         allocate_and_construct_n(n, value_type());
@@ -293,52 +291,10 @@ public:
 		return std::equal(begin(), end(), rhs.begin());
 	}
 	auto operator<=>(const Vector& rhs) const noexcept {
-		if (size() != rhs.size()) return size() <=> rhs.size();
 		return std::lexicographical_compare_three_way(begin(), end(), rhs.begin(), rhs.end());
 	}
 
 private:
-
-    struct Buffer {
-        pointer begin_{ nullptr };
-        pointer end_{ nullptr };
-        pointer capacity_{ nullptr };
-
-        Buffer() = default;
-
-        ~Buffer() = default;
-
-        Buffer(const Buffer&) = delete;
-        Buffer& operator=(const Buffer&) = delete;
-
-        Buffer(Buffer&& other) noexcept
-            : begin_(std::exchange(other.begin_, nullptr))
-            , end_(std::exchange(other.end_, nullptr))
-            , capacity_(std::exchange(other.capacity_, nullptr)) {
-        }
-
-        Buffer& operator=(Buffer&& other) noexcept {
-            if (this == &other) return *this;
-                
-            begin_ = std::exchange(other.begin_, nullptr);
-            end_ = std::exchange(other.end_, nullptr);
-            capacity_ = std::exchange(other.capacity_, nullptr);
-            return *this;
-        }
-
-        size_type size() const noexcept { return end_ - begin_; }
-        size_type capacity() const noexcept { return capacity_ - begin_; }
-        pointer data() noexcept { return begin_; }
-        const_pointer data() const noexcept { return begin_; }
-        bool empty() const noexcept { return begin_ == end_; }
-
-        void swap(Buffer& rhs) noexcept {
-            using std::swap;
-            swap(begin_, rhs.begin_);
-            swap(end_, rhs.end_);
-            swap(capacity_, rhs.capacity_);
-        }
-    } buf_{};
 
     pointer allocate(size_type n) {
         return n != 0 ? static_cast<pointer>(::operator new(n * sizeof(value_type))) : nullptr;
@@ -454,6 +410,47 @@ private:
         buf_.end_ = new_end;
         buf_.capacity_ = new_begin + new_cap;
     }
+
+    struct Buffer {
+        pointer begin_{ nullptr };
+        pointer end_{ nullptr };
+        pointer capacity_{ nullptr };
+
+        Buffer() = default;
+
+        ~Buffer() = default;
+
+        Buffer(const Buffer&) = delete;
+        Buffer& operator=(const Buffer&) = delete;
+
+        Buffer(Buffer&& other) noexcept
+            : begin_(std::exchange(other.begin_, nullptr))
+            , end_(std::exchange(other.end_, nullptr))
+            , capacity_(std::exchange(other.capacity_, nullptr)) {
+        }
+
+        Buffer& operator=(Buffer&& other) noexcept {
+            if (this == &other) return *this;
+                
+            begin_ = std::exchange(other.begin_, nullptr);
+            end_ = std::exchange(other.end_, nullptr);
+            capacity_ = std::exchange(other.capacity_, nullptr);
+            return *this;
+        }
+
+        size_type size() const noexcept { return end_ - begin_; }
+        size_type capacity() const noexcept { return capacity_ - begin_; }
+        pointer data() noexcept { return begin_; }
+        const_pointer data() const noexcept { return begin_; }
+        bool empty() const noexcept { return begin_ == end_; }
+
+        void swap(Buffer& rhs) noexcept {
+            using std::swap;
+            swap(begin_, rhs.begin_);
+            swap(end_, rhs.end_);
+            swap(capacity_, rhs.capacity_);
+        }
+    } buf_{};
 };
 
 template <typename T>

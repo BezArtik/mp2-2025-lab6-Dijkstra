@@ -113,26 +113,7 @@ public:
 	}
 
 private:
-	struct Node {
-		value_type value_{};
-		Node* parent_{ nullptr };
-		Node* child_{ nullptr };
-		Node* sibling_{ nullptr };
-		int32_t degree_{};
-		template <typename V>
-		Node(V&& val)
-			: value_(std::forward<V>(val))
-			, parent_(nullptr)
-			, child_(nullptr)
-			, sibling_(nullptr)
-			, degree_(0) {
-		}
-	};
 
-	Node* root_{ nullptr };
-	Node* min_{ nullptr };
-	Compare comp_{};
-	size_type size_{};
 
 	template <typename V>
 	Node* create_node(V&& val) {
@@ -248,7 +229,28 @@ private:
 			child = next;
 		}
 		destroy_node(node);
-	}
+	}	
+	
+	struct Node {
+		value_type value_{};
+		Node* parent_{ nullptr };
+		Node* child_{ nullptr };
+		Node* sibling_{ nullptr };
+		int32_t degree_{};
+		template <typename V>
+		Node(V&& val)
+			: value_(std::forward<V>(val))
+			, parent_(nullptr)
+			, child_(nullptr)
+			, sibling_(nullptr)
+			, degree_(0) {
+		}
+	};
+
+	Node* root_{ nullptr };
+	Node* min_{ nullptr };
+	Compare comp_{};
+	size_type size_{};
 };
 
 }

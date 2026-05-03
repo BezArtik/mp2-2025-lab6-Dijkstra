@@ -13,34 +13,42 @@
 
 namespace graph {
 
-using PQElement = std::pair<size_t, size_t>;
-using Compare = std::greater<PQElement>;
-using PQDHeap = heaps::DHeap<PQElement, 3, Compare>;
-using PQBinomialHeap = heaps::BinomialHeap<PQElement, Compare>;
-
-template <typename HeapType>
-auto dijkstra(const graph::Graph& graph, size_t start) {
+template <typename PriorityQueue, typename WeightType = size_t>
+auto dijkstra(const graph::Graph<WeightType>& graph, size_t start) {
 	const auto n = graph.vertices();
-	containers::Vector<size_t> distances(n, Graph::INF);
-	distances[start] = 0;
-	containers::PriorityQueue<PQElement, HeapType, Compare> pq;
-	pq.push({ 0, start });
+	containers::Vector<WeightType> distances(n, Graph<WeightType>::INF);
+	distances[start] = WeightType{ 0 };
+
+	PriorityQueue pq;
+	pq.push({ WeightType{ 0 }, start });
 	while (!pq.empty()) {
 		auto [dist, u] = pq.top();
 		pq.pop();
 		if (dist > distances[u]) continue;
-		for (size_t v = 0; v < n; ++v) {
-			const auto weight = graph.get_edge(u, v);
-			if (weight != Graph::INF) {
-				auto new_dist = dist + weight;
-				if (new_dist < distances[v]) {
-					distances[v] = new_dist;
-					pq.push({ new_dist, v });
-				}
+
+		for (const auto& [v, weight] : graph.get_neighbors(u)) {
+			auto new_dist = dist + weight;
+			if (new_dist < distances[v]) {
+				distances[v] = new_dist;
+				pq.push({ new_dist, v });
 			}
 		}
 	}
 	return distances;
 }
+
+template <typename WeightType, int32_t d = 3>
+using DHeapDijkstra = containers::PriorityQueue<
+	std::pair<WeightType, size_t>,
+	heaps::DHeap<std::pair<WeightType, size_t>, d, std::greater<std::pair<WeightType, size_t>>>,
+	std::greater<std::pair<WeightType, size_t>>
+>;
+
+template <typename WeightType>
+using BinomialDijkstra = containers::PriorityQueue<
+	std::pair<WeightType, size_t>,
+	heaps::BinomialHeap<std::pair<WeightType, size_t>, std::greater<std::pair<WeightType, size_t>>>,
+	std::greater<std::pair<WeightType, size_t>>
+>;
 
 }
