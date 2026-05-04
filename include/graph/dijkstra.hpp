@@ -37,6 +37,18 @@ auto dijkstra(const graph::Graph<WeightType>& graph, size_t start) {
 	return distances;
 }
 
+template <typename WeightType>
+void print_distances(const containers::Vector<WeightType>& distances, size_t start) {
+	std::cout << "Distances from vertex " << start << ":\n";
+	for (size_t i = 0; i < distances.size(); ++i) {
+		if (distances[i] == Graph<WeightType>::INF) {
+			std::cout << i << ": unreachable\n";
+		} else {
+			std::cout << i << ": " << distances[i] << '\n';
+		}
+	}
+}
+
 template <typename WeightType, int32_t d = 3>
 using DHeapDijkstra = containers::PriorityQueue<
 	std::pair<WeightType, size_t>,

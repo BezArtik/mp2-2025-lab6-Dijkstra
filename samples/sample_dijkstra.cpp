@@ -19,7 +19,7 @@ struct BenchmarkResult {
 template <typename PQType>
 BenchmarkResult benchmark_dijkstra(
     const graph::Graph<size_t>& graph,
-    const std::string& name_,
+    const std::string& name,
     size_t iterations) {
     graph::dijkstra<PQType>(graph, 0);
 
@@ -33,7 +33,7 @@ BenchmarkResult benchmark_dijkstra(
         total_time += elapsed.count();
     }
 
-    return {name_, total_time / iterations};
+    return {name, total_time / iterations};
 }
 
 void print_benchmark_header() noexcept {
@@ -106,24 +106,87 @@ std::optional<GraphConfig> get_graph_config() noexcept {
     return config;
 }
 
+auto input_graph_manual() {
+    size_t vertices;
+    std::cout << "Number of vertices: ";
+    std::cin >> vertices;
+
+    graph::Graph<size_t> graph(vertices);
+
+    size_t edges_count;
+    std::cout << "Number of edges: ";
+    std::cin >> edges_count;
+
+    std::cout << "Enter " << edges_count << " edges (from to weight):\n";
+    for (size_t i = 0; i < edges_count; ++i) {
+        size_t from, to, weight;
+        std::cin >> from >> to >> weight;
+
+        try {
+            graph.add_edge(from, to, weight);
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << '\n';
+        }
+    }
+
+    return graph;
+}
+
+void run_dijkstra_interactive(const graph::Graph<size_t>& graph) {
+    std::cout << "\n=== Dijkstra ===\n";
+
+    size_t start = 0;
+    std::cout << "Start vertex: ";
+    std::cin >> start;
+
+    if (start >= graph.vertices()) {
+        std::cerr << "Invalid vertex\n";
+        return;
+    }
+
+    auto distances = graph::dijkstra<graph::DHeapDijkstra<size_t>>(graph, start);
+    graph::print_distances(distances, start);
+}
+
+
 void run_interactive() {
     while (true) {
-        auto config = get_graph_config();
-        if (!config) {
+        std::cout << "\n=== Main Menu ===\n";
+        std::cout << "1: Generate random graph + benchmark\n"
+                  << "2: Input graph manually + Dijkstra\n"
+                  << "0: Exit\n"
+                  << "Choice: ";
+
+        int choice = 0;
+        std::cin >> choice;
+
+        if (choice == 0) {
             std::cout << "Exiting...\n";
             break;
         }
 
-        std::cout << "\nGenerating graph...\n";
+        if (choice == 1) {
+            auto config = get_graph_config();
+            if (!config) continue;
 
-        auto graph = graph::generate(
-            config->vertices_, config->density_,
-            config->min_weight_, config->max_weight_);
+            std::cout << "\nGenerating graph...\n";
+            auto graph = graph::generate(
+                config->vertices_, config->density_,
+                config->min_weight_, config->max_weight_);
+            std::cout << "Complete.\n\n";
+            compare_heaps(graph);
+            std::cout << std::string(40, '-') << '\n';
+        } else if (choice == 2) {
+            auto graph = input_graph_manual();
 
-        std::cout << "Complete." << "\n\n";
+            if (!graph.is_connected()) {
+                std::cout << "Graph is not connected!\n";
+                continue;
+            }
 
-        compare_heaps(graph);
-        std::cout << std::string(40, '-') << '\n';
+            run_dijkstra_interactive(graph);
+            std::cout << std::string(40, '-') << '\n';
+        }
     }
 }
 

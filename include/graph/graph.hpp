@@ -9,38 +9,47 @@ template <typename WeightType = size_t>
 class Graph {
 public:
     static constexpr WeightType INF = std::numeric_limits<WeightType>::max() / 2;
-    static constexpr double DENSITY = 0.5; 
+    static constexpr double DENSE_THRESHOLD = 0.3;
+    static constexpr double SPARSE_THRESHOLD = 0.1;
 
     Graph(size_t vertices)
         : vertices_(vertices)
-        , adj_list_(vertices)
-        , use_matrix_(false)
-        , edges_(0) {}
+        , edges_(0)
+        , use_matrix_(false)         
+        , adj_list_(vertices) {}
 
     void add_edge(size_t from, size_t to, WeightType weight) {
         validate(from, to);
         if (from == to) return;
 
-        if (!use_matrix_) {
-            add_edge_list(from, to, weight);
-        } else {
-            add_edge_matrix(from, to, weight);
+        add_edge_list(from, to, weight);
+
+        if (use_matrix_) {
+            matrix_[from * vertices_ + to] = weight;
+            matrix_[to * vertices_ + from] = weight;
         }
 
         ++edges_;
 
-        if (!use_matrix_ && should_use_matrix()) {
-            switch_to_matrix();
+        if (!use_matrix_ && should_enable_matrix()) {
+            build_matrix();
+        } else if (use_matrix_ && should_disable_matrix()) {
+            drop_matrix();
         }
+    }
+
+    const auto& get_neighbors(size_t vertex) const {
+        validate(vertex);
+        return adj_list_[vertex];
     }
 
     WeightType get_edge(size_t from, size_t to) const {
         validate(from, to);
 
-        if (!use_matrix_) {
-            return get_edge_list(from, to);
+        if (use_matrix_) {
+            return matrix_[from * vertices_ + to]; 
         } else {
-            return get_edge_matrix(from, to);
+            return get_edge_list(from, to);
         }
     }
 
@@ -48,49 +57,34 @@ public:
         return get_edge(from, to) != INF;
     }
 
-    const auto& get_neighbors(size_t vertex) const {
-        validate(vertex);
+    bool is_connected() const {
+        if (vertices_ == 0) return true;
 
-        if (!use_matrix_) {
-            return adj_list_[vertex];
-        } else {
-            if (cached_vertex_ != vertex) {
-                cache_neighbors(vertex);
-            }
-            return neighbor_cache_;
-        }
-    }
-
-    static bool is_connected(const Graph<WeightType>& graph) {
-        auto V = graph.vertices();
-        if (V == 0) return true;
-
-        containers::Vector<bool> visited(V, false);
+        containers::Vector<bool> visited(vertices_, false);
         containers::Stack<size_t> stack;
 
         stack.push(0);
         visited[0] = true;
-        size_t visited_сount = 1;
+        size_t visited_count = 1;
 
         while (!stack.empty()) {
             auto vertex = stack.top();
             stack.pop();
 
-            for (size_t i = 0; i < V; ++i) {
-                if (!visited[i] && graph.get_edge(vertex, i) != INF) {
-                    visited[i] = true;
-                    stack.push(i);
-                    ++visited_сount;
+            for (const auto& [neighbor, weight] : get_neighbors(vertex)) {
+                if (!visited[neighbor]) {
+                    visited[neighbor] = true;
+                    stack.push(neighbor);
+                    ++visited_count;
                 }
             }
         }
 
-        return visited_сount == V;
+        return visited_count == vertices_;
     }
 
     size_t vertices() const noexcept { return vertices_; }
     size_t edges() const noexcept { return edges_; }
-    bool is_dense() const noexcept { return use_matrix_; }
 
 private:
 
@@ -101,6 +95,11 @@ private:
     void validate(size_t from, size_t to) const {
         validate(from);
         validate(to);
+    }
+
+    double density() const noexcept {
+        if (vertices_ < 2) return 0.0;
+        return static_cast<double>(edges_) / (vertices_ * (vertices_ - 1) / 2.0);
     }
 
     void add_edge_list(size_t from, size_t to, WeightType weight) {
@@ -117,11 +116,6 @@ private:
         adj_list_[to].push_back({ from, weight });
     }
 
-    void add_edge_matrix(size_t from, size_t to, WeightType weight) noexcept {
-        matrix_[from * vertices_ + to] = weight;
-        matrix_[to * vertices_ + from] = weight;
-    }
-
     WeightType get_edge_list(size_t from, size_t to) const noexcept {
         for (const auto& [v, w] : adj_list_[from]) {
             if (v == to) return w;
@@ -129,17 +123,15 @@ private:
         return INF;
     }
 
-    WeightType get_edge_matrix(size_t from, size_t to) const noexcept {
-        return matrix_[from * vertices_ + to];
+    bool should_enable_matrix() const noexcept {
+        return density() >= DENSE_THRESHOLD;
     }
 
-    bool should_use_matrix() const noexcept {
-        if (vertices_ < 2) return false;
-        auto max_edges = vertices_ * (vertices_ - 1) / 2;
-        return static_cast<double>(edges_) / max_edges >= DENSITY;
+    bool should_disable_matrix() const noexcept {
+        return density() <= SPARSE_THRESHOLD;
     }
 
-    void switch_to_matrix() {
+    void build_matrix() {
         matrix_.resize(vertices_ * vertices_, INF);
         for (size_t i = 0; i < vertices_; ++i) {
             matrix_[i * vertices_ + i] = 0;
@@ -151,22 +143,12 @@ private:
             }
         }
 
-        adj_list_.clear();
         use_matrix_ = true;
     }
 
-    void cache_neighbors(size_t vertex) const {
-        neighbor_cache_.clear();
-        auto base = vertex * vertices_;
-        for (size_t i = 0; i < vertices_; ++i) {
-            if (i != vertex) {
-                auto w = matrix_[base + i];
-                if (w != INF) {
-                    neighbor_cache_.push_back({ i, w });
-                }
-            }
-        }
-        cached_vertex_ = vertex;
+    void drop_matrix() noexcept {
+        containers::Vector<WeightType>().swap(matrix_);
+        use_matrix_ = false;
     }
 
     size_t vertices_;
@@ -177,8 +159,6 @@ private:
     containers::Vector<vertices_list> adj_list_;
     containers::Vector<WeightType> matrix_;
 
-    mutable vertices_list neighbor_cache_;
-    mutable size_t cached_vertex_ = std::numeric_limits<size_t>::max();
 };
 
-}
+} 
