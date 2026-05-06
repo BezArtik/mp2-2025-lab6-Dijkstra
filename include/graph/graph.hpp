@@ -38,23 +38,23 @@ public:
         }
     }
 
-    const auto& get_neighbors(size_t vertex) const {
+    const auto& neighbors(size_t vertex) const {
         validate(vertex);
         return adj_list_[vertex];
     }
 
-    WeightType get_edge(size_t from, size_t to) const {
+    WeightType edge(size_t from, size_t to) const {
         validate(from, to);
 
         if (use_matrix_) {
             return matrix_[from * vertices_ + to]; 
         } else {
-            return get_edge_list(from, to);
+            return edge_list(from, to);
         }
     }
 
     bool has_edge(size_t from, size_t to) const {
-        return get_edge(from, to) != INF;
+        return edge(from, to) != INF;
     }
 
     bool is_connected() const {
@@ -71,7 +71,7 @@ public:
             auto vertex = stack.top();
             stack.pop();
 
-            for (const auto& [neighbor, weight] : get_neighbors(vertex)) {
+            for (const auto& [neighbor, weight] : neighbors(vertex)) {
                 if (!visited[neighbor]) {
                     visited[neighbor] = true;
                     stack.push(neighbor);
@@ -116,7 +116,7 @@ private:
         adj_list_[to].push_back({ from, weight });
     }
 
-    WeightType get_edge_list(size_t from, size_t to) const noexcept {
+    WeightType edge_list(size_t from, size_t to) const noexcept {
         for (const auto& [v, w] : adj_list_[from]) {
             if (v == to) return w;
         }

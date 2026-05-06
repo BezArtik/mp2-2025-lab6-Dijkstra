@@ -19,6 +19,9 @@ target_sources(tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/test_heaps/test_dheap.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_containers/test_vector.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_containers/test_priority_queue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_containers/test_stack.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/generators/generators.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_graph/test_graph.cpp
 )
 
 target_link_libraries(tests

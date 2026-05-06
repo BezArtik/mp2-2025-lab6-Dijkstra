@@ -25,8 +25,7 @@ auto dijkstra(const graph::Graph<WeightType>& graph, size_t start) {
 		auto [dist, u] = pq.top();
 		pq.pop();
 		if (dist > distances[u]) continue;
-
-		for (const auto& [v, weight] : graph.get_neighbors(u)) {
+		for (const auto& [v, weight] : graph.neighbors(u)) {
 			auto new_dist = dist + weight;
 			if (new_dist < distances[v]) {
 				distances[v] = new_dist;

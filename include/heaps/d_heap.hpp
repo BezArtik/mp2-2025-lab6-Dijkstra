@@ -37,6 +37,11 @@ public:
 	const_reference top() const noexcept { return data_.front(); }
 	bool empty() const noexcept { return data_.empty(); }
 	size_type size() const noexcept { return data_.size(); }
+	void clear() noexcept { data_.clear(); }
+	void swap(DHeap& other) noexcept {
+		using std::swap;
+		swap(data_, other.data_);
+	}
 
 private:
 

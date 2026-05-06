@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <optional>
 #include <initializer_list>
+#include <limits>
 
 namespace sample {
 
@@ -79,6 +80,11 @@ struct GraphConfig {
     size_t max_weight_;
 };
 
+void clear_input_buffer() {
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
 std::optional<GraphConfig> get_graph_config() noexcept {
     GraphConfig config;
 
@@ -86,6 +92,7 @@ std::optional<GraphConfig> get_graph_config() noexcept {
 
     std::cout << "Number of vertices (0 to exit): ";
     if (!(std::cin >> config.vertices_) || config.vertices_ == 0) {
+        clear_input_buffer();
         return std::nullopt;
     }
 
@@ -93,6 +100,7 @@ std::optional<GraphConfig> get_graph_config() noexcept {
     if (!(std::cin >> config.density_) || config.density_ < 0.0 || config.density_ > 1.0) {
         std::cerr << "Invalid density. Using default: 0.3\n";
         config.density_ = 0.3;
+        clear_input_buffer();
     }
 
     std::cout << "Min and max weight: ";
@@ -101,26 +109,39 @@ std::optional<GraphConfig> get_graph_config() noexcept {
         std::cerr << "Invalid weights. Using default: 1 100\n";
         config.min_weight_ = 1;
         config.max_weight_ = 100;
+        clear_input_buffer();
     }
 
     return config;
 }
 
 auto input_graph_manual() {
-    size_t vertices;
+    size_t vertices = 0;
     std::cout << "Number of vertices: ";
-    std::cin >> vertices;
+    if (!(std::cin >> vertices)) {
+        std::cerr << "Invalid vertices. Using default 2\n";
+        vertices = 2;
+        clear_input_buffer();
+    }
 
     graph::Graph<size_t> graph(vertices);
 
     size_t edges_count;
     std::cout << "Number of edges: ";
-    std::cin >> edges_count;
+    if (!(std::cin >> edges_count)) {
+        std::cerr << "Invalid number of edges. Using default 1\n";
+        edges_count = 1;
+        clear_input_buffer();
+    }
 
     std::cout << "Enter " << edges_count << " edges (from to weight):\n";
     for (size_t i = 0; i < edges_count; ++i) {
-        size_t from, to, weight;
-        std::cin >> from >> to >> weight;
+        size_t from = 0, to = 0, weight = 0;
+        if (!(std::cin >> from >> to >> weight)) {
+            std::cerr << "Invalid input. Using default data\n";
+            from = 0; to = 1; weight = 1;
+            clear_input_buffer();
+        }
 
         try {
             graph.add_edge(from, to, weight);
@@ -137,11 +158,10 @@ void run_dijkstra_interactive(const graph::Graph<size_t>& graph) {
 
     size_t start = 0;
     std::cout << "Start vertex: ";
-    std::cin >> start;
 
-    if (start >= graph.vertices()) {
-        std::cerr << "Invalid vertex\n";
-        return;
+    if (!(std::cin >> start) || start >= graph.vertices()) {
+        std::cerr << "Invalid vertex. Using default 0\n";
+        clear_input_buffer();
     }
 
     auto distances = graph::dijkstra<graph::DHeapDijkstra<size_t>>(graph, start);
@@ -159,6 +179,7 @@ void run_interactive() {
 
         int choice = 0;
         std::cin >> choice;
+        clear_input_buffer();
 
         if (choice == 0) {
             std::cout << "Exiting...\n";
