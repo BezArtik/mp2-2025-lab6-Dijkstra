@@ -6,7 +6,7 @@ jobs:
  windows-msvc-build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Build Dijkstra
       shell: bash
       run: |
@@ -15,8 +15,8 @@ jobs:
         cmake \
             -A x64 \
             -B ${PWD}/build
-        cmake --build ${PWD}/build --config Release
+        cmake --build ${PWD}/build --config Debug
     - name: Run tests
       shell: bash
       run: |
-        ${PWD}/build/test/Release/dijkstra_test.exe --gtest_repeat=2 --gtest_break_on_failure
+        ${PWD}/build/tests/Debug/tests.exe --gtest_repeat=2 --gtest_break_on_failure

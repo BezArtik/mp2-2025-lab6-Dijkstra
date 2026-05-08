@@ -20,7 +20,15 @@ auto generate(size_t vertices, double density,
 
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<WeightType> weight_dist(min_weight, max_weight);
+    auto generate_weight = [&]() -> auto {
+        if constexpr (std::is_floating_point_v<WeightType>) {
+            std::uniform_real_distribution<WeightType> dist(min_weight, max_weight);
+            return dist(gen);
+        } else {
+            std::uniform_int_distribution<WeightType> dist(min_weight, max_weight);
+            return dist(gen);
+        }
+    };
     std::uniform_real_distribution prob_dist(0.0, 1.0);
 
     containers::Vector<size_t> vertices_list(vertices);
@@ -31,7 +39,7 @@ auto generate(size_t vertices, double density,
         auto u = vertices_list[i];
         auto v = vertices_list[std::uniform_int_distribution<size_t>(0, i - 1)(gen)];
 
-        auto weight = weight_dist(gen);
+        auto weight = generate_weight();
         graph.add_edge(u, v, weight);
     }
 
@@ -54,7 +62,7 @@ auto generate(size_t vertices, double density,
         possible_edges.size());
     for (size_t i = 0; i < edges_to_add; ++i) {
         auto [from, to] = possible_edges[i];
-        auto weight = weight_dist(gen);
+        auto weight = generate_weight();
         graph.add_edge(from, to, weight);
     }
 

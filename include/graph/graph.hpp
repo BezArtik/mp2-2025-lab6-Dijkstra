@@ -22,15 +22,15 @@ public:
         validate(from, to);
         if (from == to) return;
 
-        add_edge_list(from, to, weight);
+        bool is_new_edge = add_edge_list(from, to, weight);
 
         if (use_matrix_) {
             matrix_[from * vertices_ + to] = weight;
             matrix_[to * vertices_ + from] = weight;
         }
 
-        ++edges_;
-
+        if (is_new_edge) ++edges_;
+            
         if (!use_matrix_ && should_enable_matrix()) {
             build_matrix();
         } else if (use_matrix_ && should_disable_matrix()) {
@@ -102,18 +102,19 @@ private:
         return static_cast<double>(edges_) / (vertices_ * (vertices_ - 1) / 2.0);
     }
 
-    void add_edge_list(size_t from, size_t to, WeightType weight) {
+    bool add_edge_list(size_t from, size_t to, WeightType weight) {
         for (auto& [v, w] : adj_list_[from]) {
             if (v == to) {
                 w = weight;
                 for (auto& [v2, w2] : adj_list_[to]) {
-                    if (v2 == from) { w2 = weight; return; }
+                    if (v2 == from) { w2 = weight; return false; }
                 }
-                return;
+                return false;
             }
         }
         adj_list_[from].push_back({ to, weight });
         adj_list_[to].push_back({ from, weight });
+        return true; 
     }
 
     WeightType edge_list(size_t from, size_t to) const noexcept {

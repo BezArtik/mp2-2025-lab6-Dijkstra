@@ -203,8 +203,7 @@ public:
         if (count < size()) {
             std::destroy(buf_.begin_ + count, buf_.end_);
             buf_.end_ = buf_.begin_ + count;
-        }
-        else if (count > size()) {
+        } else if (count > size()) {
             if (count > capacity()) {
                 reserve(count);
             }
@@ -226,8 +225,7 @@ public:
     reference emplace_back(Args&&... args) {
         if (buf_.end_ == buf_.capacity_) {
             reallocate_and_construct_at(size(), std::forward<Args>(args)...);
-        }
-        else {
+        } else {
             std::construct_at(buf_.end_, std::forward<Args>(args)...);
             ++buf_.end_;
         }
@@ -248,7 +246,7 @@ public:
             throw std::out_of_range("Vector::emplace - iterator out of range");
         }
 
-        const size_type index = pos - cbegin();
+        const auto index = pos - cbegin();
 
         if (index == size()) {
             emplace_back(std::forward<Args>(args)...);
