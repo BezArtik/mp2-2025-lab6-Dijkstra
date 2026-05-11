@@ -18,7 +18,7 @@ add_interface(containers)
 add_interface(heaps)
 target_link_libraries(heaps INTERFACE containers)
 
-#add_subdirectory(src)
+add_subdirectory(src)
 
 if(BUILD_SAMPLES)
     add_subdirectory(samples)

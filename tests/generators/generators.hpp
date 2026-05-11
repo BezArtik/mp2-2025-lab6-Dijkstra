@@ -23,11 +23,11 @@ struct Generator {
             return StringGenerator{}();
         } else if constexpr (std::is_same_v<T, int>) {
             static std::mt19937_64 gen(std::random_device{}());
-            static std::uniform_int_distribution<int> dist(-10'000, 10'000);
+            static std::uniform_int_distribution dist(-10'000, 10'000);
             return dist(gen);
         } else if constexpr (std::is_same_v<T, double>) {
             static std::mt19937_64 gen(std::random_device{}());
-            static std::uniform_real_distribution<double> dist(-10'000.0, 10'000.0);
+            static std::uniform_real_distribution dist(-10'000.0, 10'000.0);
             return dist(gen);
         } else {
             return T{};

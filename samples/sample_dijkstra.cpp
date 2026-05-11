@@ -19,7 +19,7 @@ struct BenchmarkResult {
 
 template <typename PQType>
 BenchmarkResult benchmark_dijkstra(
-    const graph::Graph<size_t>& graph,
+    const graph::Graph& graph,
     const std::string& name,
     size_t iterations) {
     graph::dijkstra<PQType>(graph, 0);
@@ -55,12 +55,12 @@ void print_benchmark_result(const BenchmarkResult& result) noexcept {
         << '\n';
 }
 
-void compare_heaps(const graph::Graph<size_t>& graph) {
+void compare_heaps(const graph::Graph& graph) {
     print_benchmark_header();
 
-    using DHeap2 = graph::DHeapDijkstra<size_t, 2>;
-    using DHeap3 = graph::DHeapDijkstra<size_t>;
-    using Binomial = graph::BinomialDijkstra<size_t>;
+    using DHeap2 = graph::DHeapDijkstra<2>;
+    using DHeap3 = graph::DHeapDijkstra<3>;
+    using Binomial = graph::BinomialDijkstra;
 
     auto results = {
         benchmark_dijkstra<DHeap2>(graph, "2-Heap", 10),
@@ -97,7 +97,7 @@ std::optional<GraphConfig> get_graph_config() noexcept {
     }
 
     std::cout << "Density [0.0, 1.0]: ";
-    if (!(std::cin >> config.density_) || config.density_ < 0.0 || config.density_ > 1.0) {
+    if (!(std::cin >> config.density_) || config.density_ <= 0.0 || config.density_ > 1.0) {
         std::cerr << "Invalid density. Using default: 0.3\n";
         config.density_ = 0.3;
         clear_input_buffer();
@@ -124,7 +124,7 @@ auto input_graph_manual() {
         clear_input_buffer();
     }
 
-    graph::Graph<size_t> graph(vertices);
+    graph::Graph graph(vertices);
 
     size_t edges_count;
     std::cout << "Number of edges: ";
@@ -153,7 +153,7 @@ auto input_graph_manual() {
     return graph;
 }
 
-void run_dijkstra_interactive(const graph::Graph<size_t>& graph) {
+void run_dijkstra_interactive(const graph::Graph& graph) {
     std::cout << "\n=== Dijkstra ===\n";
 
     size_t start = 0;
@@ -164,7 +164,7 @@ void run_dijkstra_interactive(const graph::Graph<size_t>& graph) {
         clear_input_buffer();
     }
 
-    auto distances = graph::dijkstra<graph::DHeapDijkstra<size_t>>(graph, start);
+    auto distances = graph::dijkstra<graph::DHeapDijkstra<3>>(graph, start);
     graph::print_distances(distances, start);
 }
 

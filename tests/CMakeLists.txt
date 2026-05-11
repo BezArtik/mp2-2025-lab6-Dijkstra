@@ -28,6 +28,7 @@ target_link_libraries(tests
 	PRIVATE
     containers
     heaps
+    graph
 	GTest::gtest_main
 	GTest::gmock
 )

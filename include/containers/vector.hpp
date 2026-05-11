@@ -56,7 +56,7 @@ public:
     class ConstIterator {
     public:
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = T;
+        using value_type = const T;
         using difference_type = ptrdiff_t;
         using pointer = const T*;
         using reference = const T&;
@@ -371,7 +371,7 @@ private:
 
     template<typename... Args>
     void reallocate_and_construct_at(size_type index, Args&&... args) {
-        const auto new_cap = capacity() == 0 ? 1 : capacity() * 2;
+        const auto new_cap = capacity() * 2 + 1;
 
         ScopedBuffer scoped(new_cap);
         auto new_end = scoped.buf_.begin_;

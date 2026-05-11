@@ -5,6 +5,7 @@ function(add_sample sample_name source_file)
         PRIVATE
             containers
             heaps
+            graph
     )
     
     target_compile_features(${sample_name} PRIVATE cxx_std_20)
