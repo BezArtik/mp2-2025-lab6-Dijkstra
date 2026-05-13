@@ -6,8 +6,8 @@ namespace graph {
 class Graph {    
 public:
     static constexpr size_t INF = std::numeric_limits<size_t>::max() / 2;
-    static constexpr double DENSE_THRESHOLD = 0.3;
-    static constexpr double SPARSE_THRESHOLD = 0.1;
+    static constexpr double DENSE_THRESHOLD = 0.6;
+    static constexpr double SPARSE_THRESHOLD = 0.2;
 
     Graph(size_t vertices);
 
