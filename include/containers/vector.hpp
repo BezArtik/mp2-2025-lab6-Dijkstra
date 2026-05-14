@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <memory>
 #include <iterator>
+#include <cstddef>
 
 namespace containers {
 
@@ -44,8 +45,12 @@ public:
         Iterator& operator-=(difference_type n) noexcept { ptr_ -= n; return *this; }
         difference_type operator-(const Iterator& other) const noexcept { return ptr_ - other.ptr_; }
 
-        bool operator==(const Iterator& other) const noexcept = default;
-        auto operator<=>(const Iterator& other) const noexcept = default;
+        bool operator==(const Iterator& other) const noexcept { return ptr_ == other.ptr_; }
+        bool operator!=(const Iterator& other) const noexcept { return ptr_ != other.ptr_; }
+        bool operator<(const Iterator& other) const noexcept { return ptr_ < other.ptr_; }
+        bool operator<=(const Iterator& other) const noexcept { return ptr_ <= other.ptr_; }
+        bool operator>(const Iterator& other) const noexcept { return ptr_ > other.ptr_; }
+        bool operator>=(const Iterator& other) const noexcept { return ptr_ >= other.ptr_; }
 
     private:
         pointer ptr_{ nullptr };
@@ -78,8 +83,12 @@ public:
         ConstIterator& operator-=(difference_type n) noexcept { ptr_ -= n; return *this; }
         difference_type operator-(const ConstIterator& other) const noexcept { return ptr_ - other.ptr_; }
 
-        bool operator==(const ConstIterator& other) const noexcept = default;
-        auto operator<=>(const ConstIterator& other) const noexcept = default;
+        bool operator==(const ConstIterator& other) const noexcept { return ptr_ == other.ptr_; }
+        bool operator!=(const ConstIterator& other) const noexcept { return ptr_ != other.ptr_; }
+        bool operator<(const ConstIterator& other) const noexcept { return ptr_ < other.ptr_; }
+        bool operator<=(const ConstIterator& other) const noexcept { return ptr_ <= other.ptr_; }
+        bool operator>(const ConstIterator& other) const noexcept { return ptr_ > other.ptr_; }
+        bool operator>=(const ConstIterator& other) const noexcept { return ptr_ >= other.ptr_; }
 
     private:
         pointer ptr_{ nullptr };
@@ -92,11 +101,15 @@ public:
     Vector() noexcept = default;
 
     Vector(size_type n) {
-        allocate_and_construct_n(n, value_type());
+        allocate_and_init(n, [](pointer p, size_type n) {
+            std::uninitialized_value_construct_n(p, n);
+            });
     }
 
     Vector(size_type n, const_reference value) {
-        allocate_and_construct_n(n, value);
+        allocate_and_init(n, [&](pointer p, size_type n) {
+            std::uninitialized_fill_n(p, n, value);
+            });
     }
 
     Vector(const Vector& other) {
@@ -128,51 +141,33 @@ public:
 
     Vector& operator=(const Vector& other) {
         if (this == &other) return *this;
-
-        if (capacity() >= other.size()) {
-            const auto copy_end = std::uninitialized_copy(
-                other.begin(), other.end(), buf_.begin_);
-            std::destroy(buf_.end_, copy_end);
-            buf_.end_ = copy_end;
-        } else {
-            Vector tmp(other);
-            swap(tmp);
-        }
+        Vector tmp(other);
+        swap(tmp);
         return *this;
     }
 
     Vector& operator=(Vector&& other) noexcept {
         if (this == &other) return *this;
-
-        if (capacity() >= other.size()) {
-            const auto move_end = std::uninitialized_move(
-                other.begin(), other.end(), buf_.begin_);
-            std::destroy(buf_.end_, move_end);
-            buf_.end_ = move_end;
-            other.clear();
-        } else {
-            clear();
-            buf_.deallocate_buffer();
-            buf_ = std::move(other.buf_);
-        }
+        Vector tmp(std::move(other));
+        swap(tmp);
         return *this;
     }
 
-    reference operator[](size_type index) noexcept { return buf_.data()[index]; }
-    const_reference operator[](size_type index) const noexcept { return buf_.data()[index]; }
+    reference operator[](size_type index) noexcept { return buf_[index]; }
+    const_reference operator[](size_type index) const noexcept { return buf_[index]; }
 
     reference at(size_type index) {
         if (index >= size()) {
             throw std::out_of_range("Vector::at - index out of range");
         }
-        return buf_.data()[index];
+        return buf_[index];
     }
 
     const_reference at(size_type index) const {
         if (index >= size()) {
             throw std::out_of_range("Vector::at - index out of range");
         }
-        return buf_.data()[index];
+        return buf_[index];
     }
 
     reference front() noexcept { return *buf_.begin_; }
@@ -207,7 +202,7 @@ public:
             if (count > capacity()) {
                 reserve(count);
             }
-            construct_range(buf_.end_, buf_.begin_ + count, value);
+            std::uninitialized_fill_n(buf_.end_, count - size(), value);
             buf_.end_ = buf_.begin_ + count;
         }
     }
@@ -242,12 +237,7 @@ public:
 
     template<typename... Args>
     iterator emplace(const_iterator pos, Args&&... args) {
-        if (pos < cbegin() || pos > cend()) {
-            throw std::out_of_range("Vector::emplace - iterator out of range");
-        }
-
         const auto index = pos - cbegin();
-
         if (index == size()) {
             emplace_back(std::forward<Args>(args)...);
             return iterator(buf_.begin_ + index);
@@ -256,15 +246,12 @@ public:
         if (buf_.end_ == buf_.capacity_) {
             reallocate_and_construct_at(index, std::forward<Args>(args)...);
         } else {
-            std::construct_at(buf_.end_, std::move_if_noexcept(*(buf_.end_ - 1)));
+            std::construct_at(buf_.end_, std::move(*(buf_.end_ - 1)));
             ++buf_.end_;
-
             std::move_backward(buf_.begin_ + index, buf_.end_ - 2, buf_.end_ - 1);
-
             std::destroy_at(buf_.begin_ + index);
             std::construct_at(buf_.begin_ + index, std::forward<Args>(args)...);
         }
-
         return iterator(buf_.begin_ + index);
     }
 
@@ -279,11 +266,9 @@ public:
     iterator erase(const_iterator pos) {
         const auto index = pos - cbegin();
         auto erase_pos = buf_.begin_ + index;
-
         if (erase_pos != buf_.end_ - 1) {
             std::move(erase_pos + 1, buf_.end_, erase_pos);
         }
-
         --buf_.end_;
         std::destroy_at(buf_.end_);
         return iterator(erase_pos);
@@ -314,34 +299,11 @@ public:
 
 private:
 
-    template<typename Iter>
-    void construct_range(pointer first, pointer last, Iter iter) {
-        auto current = first;
-        try {
-            current = std::uninitialized_copy(iter, std::next(iter, last - first), first);
-        } catch (...) {
-            std::destroy(first, current);
-            throw;
-        }
-    }
-
-    void construct_range(pointer first, pointer last, const_reference value) {
-        auto current = first;
-        try {
-            current = std::uninitialized_fill_n(first, last - first, value);
-        } catch (...) {
-            std::destroy(first, current);
-            throw;
-        }
-    }
-
-    void allocate_and_construct_n(size_type n, const_reference value) {
+    template<typename Func>
+    void allocate_and_init(size_type n, Func init_func) {
         if (n == 0) return;
-
         ScopedBuffer scoped(n);
-
-        construct_range(scoped.buf_.begin_, scoped.buf_.begin_ + n, value);
-
+        init_func(scoped.buf_.begin_, n);
         scoped.buf_.end_ = scoped.buf_.begin_ + n;
         buf_ = std::move(scoped.buf_);
     }
@@ -349,21 +311,15 @@ private:
     template<typename Iter>
     void allocate_and_copy(Iter first, Iter last) {
         const auto n = std::distance(first, last);
-        if (n == 0) return;
-
+        if (n <= 0) return;
         ScopedBuffer scoped(static_cast<size_type>(n));
-
-        construct_range(scoped.buf_.begin_, scoped.buf_.begin_ + n, first);
-
-        scoped.buf_.end_ = scoped.buf_.begin_ + n;
+        scoped.buf_.end_ = std::uninitialized_copy(first, last, scoped.buf_.begin_);
         buf_ = std::move(scoped.buf_);
     }
 
     void reallocate(size_type new_cap) {
         ScopedBuffer scoped(new_cap);
-
         scoped.buf_.end_ = std::uninitialized_move(buf_.begin_, buf_.end_, scoped.buf_.begin_);
-
         std::destroy(buf_.begin_, buf_.end_);
         buf_.deallocate_buffer();
         buf_ = std::move(scoped.buf_);
@@ -372,35 +328,14 @@ private:
     template<typename... Args>
     void reallocate_and_construct_at(size_type index, Args&&... args) {
         const auto new_cap = capacity() * 2 + 1;
-
         ScopedBuffer scoped(new_cap);
-        auto new_end = scoped.buf_.begin_;
 
-        try {
-            new_end = std::uninitialized_move(buf_.begin_, buf_.begin_ + index, new_end);
-        } catch (...) {
-            throw;
-        }
+        std::construct_at(scoped.buf_.begin_ + index, std::forward<Args>(args)...);
+        std::uninitialized_move(buf_.begin_, buf_.begin_ + index, scoped.buf_.begin_);
+        std::uninitialized_move(buf_.begin_ + index, buf_.end_, scoped.buf_.begin_ + index + 1);
 
-        try {
-            std::construct_at(new_end, std::forward<Args>(args)...);
-            ++new_end;
-        } catch (...) {
-            std::destroy(scoped.buf_.begin_, new_end);
-            throw;
-        }
+        scoped.buf_.end_ = scoped.buf_.begin_ + size() + 1;
 
-        try {
-            new_end = std::uninitialized_move(buf_.begin_ + index, buf_.end_, new_end);
-        } catch (...) {
-            std::destroy(scoped.buf_.begin_, new_end);
-            throw;
-        }
-
-        scoped.buf_.end_ = new_end;
-
-        std::destroy(buf_.begin_, buf_.end_);
-        buf_.deallocate_buffer();
         buf_ = std::move(scoped.buf_);
     }
 
@@ -438,7 +373,7 @@ private:
         }
 
         void deallocate_buffer() noexcept {
-            if (begin_ && capacity() > 0) {
+            if (begin_) {
                 deallocate(begin_, capacity());
                 begin_ = end_ = capacity_ = nullptr;
             }
@@ -449,6 +384,8 @@ private:
         pointer data() noexcept { return begin_; }
         const_pointer data() const noexcept { return begin_; }
         bool empty() const noexcept { return begin_ == end_; }
+        reference operator[](size_type index) noexcept { return begin_[index]; }
+        const_reference operator[](size_type index) const noexcept { return begin_[index]; }
 
         void swap(Buffer& rhs) noexcept {
             using std::swap;
@@ -472,7 +409,7 @@ private:
     struct ScopedBuffer {
         Buffer buf_;
 
-        explicit ScopedBuffer(size_type n) {
+        ScopedBuffer(size_type n) {
             buf_.allocate_buffer(n);
         }
 
@@ -484,7 +421,6 @@ private:
         ScopedBuffer& operator=(const ScopedBuffer&) = delete;
     };
 };
-
 
 template <typename T>
 void swap(Vector<T>& lhs, Vector<T>& rhs) noexcept {
