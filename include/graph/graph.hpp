@@ -1,5 +1,6 @@
 #pragma once
 #include "containers/vector.hpp"
+#include <limits>
 
 namespace graph {
 

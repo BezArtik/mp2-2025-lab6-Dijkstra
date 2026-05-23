@@ -1,4 +1,3 @@
-#pragma once
 #include "generators.hpp"
 #include <random>
 #include <string>
